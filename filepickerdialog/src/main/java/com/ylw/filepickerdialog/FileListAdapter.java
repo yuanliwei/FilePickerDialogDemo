@@ -94,7 +94,7 @@ class FileListAdapter extends BaseAdapter {
                     if (item.position == 0) {
                         if (picker.stack.size() > 0) {
                             FileItem peek = picker.stack.pop();
-                            FileListAdapter.this.setData(new FileItem(peek.file.getParentFile(), picker.extensions, picker.showHiddenFile).getFiles());
+                            FileListAdapter.this.setData(new FileItem(peek.file.getParentFile(), picker.extensions, picker.showHiddenFile, picker.pickType).getFiles());
                             picker.listView.smoothScrollToPositionFromTop(peek.position, peek.getOffset(picker.context), 0);
                             SharedPreferences preference = picker.context.getSharedPreferences("file_picker", Context.MODE_PRIVATE);
                             preference.edit().putString("last_file", peek.file.getParentFile().getAbsolutePath()).apply();
@@ -140,17 +140,17 @@ class FileListAdapter extends BaseAdapter {
                 } else {
                     checkBox.setVisibility(View.VISIBLE);
                 }
+                if (picker.pickMode == FilePickerDialog.PICK_MODE_SINGLE) {
+                    checkBox.setVisibility(View.INVISIBLE);
+                } else {
+                    checkBox.setVisibility(View.VISIBLE);
+                }
             } else {
                 if (item.file.isDirectory()) {
                     checkBox.setVisibility(View.VISIBLE);
                 } else {
                     checkBox.setVisibility(View.INVISIBLE);
                 }
-            }
-            if (picker.pickMode == FilePickerDialog.PICK_MODE_SINGLE) {
-                checkBox.setVisibility(View.INVISIBLE);
-            } else {
-                checkBox.setVisibility(View.VISIBLE);
             }
         }
     }

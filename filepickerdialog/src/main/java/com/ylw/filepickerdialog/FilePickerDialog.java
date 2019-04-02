@@ -125,7 +125,7 @@ public class FilePickerDialog {
         File cur = new File(currentDir);
         File root = new File(rootDir);
         while (cur != null && cur.getAbsolutePath().length() > root.getAbsolutePath().length()) {
-            stack.insertElementAt(new FileItem(cur, extensions, showHiddenFile), 0);
+            stack.insertElementAt(new FileItem(cur, extensions, showHiddenFile, pickType), 0);
             cur = cur.getParentFile();
         }
         SharedPreferences preference = context.getSharedPreferences("file_picker", Context.MODE_PRIVATE);
@@ -142,7 +142,7 @@ public class FilePickerDialog {
             public void onBackPressed() {
                 if (stack.size() > 0) {
                     FileItem peek = stack.pop();
-                    adapter.setData(new FileItem(peek.file.getParentFile(), extensions, showHiddenFile).getFiles());
+                    adapter.setData(new FileItem(peek.file.getParentFile(), extensions, showHiddenFile, pickType).getFiles());
                     listView.smoothScrollToPositionFromTop(peek.position, peek.getOffset(context), 0);
                 } else {
                     super.onBackPressed();
@@ -184,7 +184,7 @@ public class FilePickerDialog {
         adapter = new FileListAdapter(this);
         listView.setAdapter(adapter);
         dialog.setContentView(contentView);
-        FileItem curItem = new FileItem(new File(currentDir), extensions, showHiddenFile);
+        FileItem curItem = new FileItem(new File(currentDir), extensions, showHiddenFile, pickType);
         adapter.setData(curItem.getFiles());
 
         int cur_position = preference.getInt("cur_position", 0);

@@ -14,14 +14,16 @@ import java.util.List;
 public class FileItem {
     private final String[] extensions;
     private final boolean showHiddenFile;
+    private final int pickType;
     int position;
     boolean isChecked;
     File file;
 
-    FileItem(File file, String[] extensions, boolean showHiddenFile) {
+    FileItem(File file, String[] extensions, boolean showHiddenFile, int pickType) {
         this.file = file;
         this.extensions = extensions;
         this.showHiddenFile = showHiddenFile;
+        this.pickType = pickType;
     }
 
     List<FileItem> getFiles() {
@@ -29,18 +31,21 @@ public class FileItem {
         File[] files = file.listFiles();
         if (files != null) {
             for (File file : files) {
+                if (pickType == FilePickerDialog.PICK_TYPE_FOLDER && file.isFile()) {
+                    continue;
+                }
                 String name = file.getName().toLowerCase();
                 if (!showHiddenFile && name.startsWith(".")) {
                     continue;
                 }
                 if (file.isDirectory()) {
-                    items.add(new FileItem(file, extensions, showHiddenFile));
+                    items.add(new FileItem(file, extensions, showHiddenFile, pickType));
                 } else if (extensions.length == 0) {
-                    items.add(new FileItem(file, extensions, showHiddenFile));
+                    items.add(new FileItem(file, extensions, showHiddenFile, pickType));
                 } else {
                     for (String extension : extensions) {
                         if (name.endsWith(extension)) {
-                            items.add(new FileItem(file, extensions, showHiddenFile));
+                            items.add(new FileItem(file, extensions, showHiddenFile, pickType));
                             break;
                         }
                     }
@@ -56,7 +61,7 @@ public class FileItem {
             }
             return o1.file.getName().compareToIgnoreCase(o2.file.getName());
         });
-        FileItem parent = new FileItem(file, extensions, showHiddenFile);
+        FileItem parent = new FileItem(file, extensions, showHiddenFile, pickType);
         items.add(0, parent);
         for (int i = 0; i < items.size(); i++) {
             FileItem fileItem = items.get(i);
