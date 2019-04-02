@@ -3,11 +3,11 @@ package com.ylw.filepickerdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Environment;
-import android.util.Log;
+import android.content.pm.PackageManager;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -15,10 +15,11 @@ import java.util.List;
 import java.util.Stack;
 
 /**
+ * FilePickerDialog
+ * <p>
  * Created by 袁立位 on 2019/4/1 11:18.
  */
 public class FilePickerDialog {
-    private static final String TAG = "FilePickerDialog";
 
     public static final int PICK_TYPE_FOLDER = 0;
     public static final int PICK_TYPE_FILE = 1;
@@ -27,30 +28,33 @@ public class FilePickerDialog {
     public static final int PICK_MODE_SINGLE = 0;
     public static final int PICK_MODE_MULTIPLE = 1;
 
+    private static final String TAG = "FilePickerDialog";
     final Context context;
     String[] extensions = new String[]{};
-    private String rootDir;
-    private String currentDir;
-    private String errorDir;
     Stack<FileItem> stack = new Stack<>();
-    private FileListAdapter adapter;
     ListView listView;
     TextView subTitleView;
-    private CharSequence title = "Choose File Dialog";
     int pickType = PICK_TYPE_ALL;
     int pickMode = PICK_MODE_MULTIPLE;
     Dialog dialog;
     IOnSelectFile callback;
+    boolean showHiddenFile = false;
+    private String rootDir;
+    private String currentDir;
+    private FileListAdapter adapter;
+    private CharSequence title = "Choose File Dialog";
 
     public FilePickerDialog(Context context) {
         this.context = context;
-        this.rootDir = Environment.getExternalStorageDirectory().getPath();
+        this.rootDir = "/mnt";
         SharedPreferences preference = context.getSharedPreferences("file_picker", Context.MODE_PRIVATE);
         this.currentDir = preference.getString("last_file", rootDir);
         if ((currentDir != null ? currentDir.length() : 0) < rootDir.length()) {
             currentDir = rootDir;
         }
-        this.errorDir = Environment.getExternalStorageDirectory().getPath();
+        if (!checkStorageAccessPermissions(context)) {
+            Toast.makeText(context, "checkStorageAccessPermissions false!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public FilePickerDialog setTitle(CharSequence title) {
@@ -68,24 +72,52 @@ public class FilePickerDialog {
         return this;
     }
 
-    public FilePickerDialog setErrorDir(String errorDir) {
-        this.errorDir = errorDir;
+    public FilePickerDialog showHiddenFile(boolean showHiddenFile) {
+        this.showHiddenFile = showHiddenFile;
         return this;
     }
 
+    /**
+     * @param extensions null: all || new String[]{".wav"} || new String[]{".wav", ".mp4}
+     * @return FilePickerDialog
+     */
     public FilePickerDialog setExtensions(String[] extensions) {
+        if (extensions == null) {
+            extensions = new String[]{};
+        }
         this.extensions = extensions;
         return this;
     }
 
+    /**
+     * @param pickType FilePickerDialog.PICK_TYPE_FOLDER
+     *                 FilePickerDialog.PICK_TYPE_FILE
+     *                 FilePickerDialog.PICK_TYPE_ALL
+     * @return FilePickerDialog
+     */
     public FilePickerDialog setPickType(int pickType) {
         this.pickType = pickType;
         return this;
     }
 
+    /**
+     * @param pickMode FilePickerDialog.PICK_MODE_SINGLE
+     *                 FilePickerDialog.PICK_MODE_MULTIPLE
+     * @return FilePickerDialog
+     */
     public FilePickerDialog setPickMode(int pickMode) {
         this.pickMode = pickMode;
         return this;
+    }
+
+    private boolean checkStorageAccessPermissions(Context context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            String permission = "android.permission.READ_EXTERNAL_STORAGE";
+            int res = context.checkCallingOrSelfPermission(permission);
+            return (res == PackageManager.PERMISSION_GRANTED);
+        } else {
+            return true;
+        }
     }
 
     public FilePickerDialog show(IOnSelectFile callback) {
@@ -93,7 +125,7 @@ public class FilePickerDialog {
         File cur = new File(currentDir);
         File root = new File(rootDir);
         while (cur != null && cur.getAbsolutePath().length() > root.getAbsolutePath().length()) {
-            stack.insertElementAt(new FileItem(cur, extensions), 0);
+            stack.insertElementAt(new FileItem(cur, extensions, showHiddenFile), 0);
             cur = cur.getParentFile();
         }
         SharedPreferences preference = context.getSharedPreferences("file_picker", Context.MODE_PRIVATE);
@@ -108,10 +140,9 @@ public class FilePickerDialog {
         dialog = new Dialog(context) {
             @Override
             public void onBackPressed() {
-                Log.i(TAG, "onBackPressed: " + stack);
                 if (stack.size() > 0) {
                     FileItem peek = stack.pop();
-                    adapter.setData(new FileItem(peek.file.getParentFile(), extensions).getFiles());
+                    adapter.setData(new FileItem(peek.file.getParentFile(), extensions, showHiddenFile).getFiles());
                     listView.smoothScrollToPositionFromTop(peek.position, peek.getOffset(context), 0);
                 } else {
                     super.onBackPressed();
@@ -153,7 +184,7 @@ public class FilePickerDialog {
         adapter = new FileListAdapter(this);
         listView.setAdapter(adapter);
         dialog.setContentView(contentView);
-        FileItem curItem = new FileItem(new File(currentDir), extensions);
+        FileItem curItem = new FileItem(new File(currentDir), extensions, showHiddenFile);
         adapter.setData(curItem.getFiles());
 
         int cur_position = preference.getInt("cur_position", 0);
@@ -164,6 +195,7 @@ public class FilePickerDialog {
     }
 
     public interface IOnSelectFile {
+
         void onSelectFile(List<File> files);
     }
 }

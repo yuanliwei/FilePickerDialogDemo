@@ -13,29 +13,34 @@ import java.util.List;
  */
 public class FileItem {
     private final String[] extensions;
-    public int position;
+    private final boolean showHiddenFile;
+    int position;
+    boolean isChecked;
     File file;
-    public boolean isChecked;
 
-    public FileItem(File file, String[] extensions) {
+    FileItem(File file, String[] extensions, boolean showHiddenFile) {
         this.file = file;
         this.extensions = extensions;
+        this.showHiddenFile = showHiddenFile;
     }
 
-    public List<FileItem> getFiles() {
+    List<FileItem> getFiles() {
         List<FileItem> items = new ArrayList<>();
         File[] files = file.listFiles();
         if (files != null) {
             for (File file : files) {
+                String name = file.getName().toLowerCase();
+                if (!showHiddenFile && name.startsWith(".")) {
+                    continue;
+                }
                 if (file.isDirectory()) {
-                    items.add(new FileItem(file, extensions));
+                    items.add(new FileItem(file, extensions, showHiddenFile));
                 } else if (extensions.length == 0) {
-                    items.add(new FileItem(file, extensions));
+                    items.add(new FileItem(file, extensions, showHiddenFile));
                 } else {
-                    String name = file.getName().toLowerCase();
                     for (String extension : extensions) {
                         if (name.endsWith(extension)) {
-                            items.add(new FileItem(file, extensions));
+                            items.add(new FileItem(file, extensions, showHiddenFile));
                             break;
                         }
                     }
@@ -51,7 +56,7 @@ public class FileItem {
             }
             return o1.file.getName().compareToIgnoreCase(o2.file.getName());
         });
-        FileItem parent = new FileItem(file, extensions);
+        FileItem parent = new FileItem(file, extensions, showHiddenFile);
         items.add(0, parent);
         for (int i = 0; i < items.size(); i++) {
             FileItem fileItem = items.get(i);
@@ -60,7 +65,7 @@ public class FileItem {
         return items;
     }
 
-    public void setOffset(int offset, Context context) {
+    void setOffset(int offset, Context context) {
         SharedPreferences preference = context.getSharedPreferences("file_picker", Context.MODE_PRIVATE);
         preference.edit().putInt(file.getAbsolutePath(), offset).apply();
     }

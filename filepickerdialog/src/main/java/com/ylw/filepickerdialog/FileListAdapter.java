@@ -19,14 +19,17 @@ import java.util.List;
 import java.util.Locale;
 
 /**
+ * FileListAdapter
+ * <p>
  * Created by 袁立位 on 2019/4/1 11:57.
  */
 class FileListAdapter extends BaseAdapter {
 
     private final FilePickerDialog picker;
     private List<FileItem> lists = new ArrayList<>();
+    private SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault());
 
-    public FileListAdapter(FilePickerDialog picker) {
+    FileListAdapter(FilePickerDialog picker) {
         this.picker = picker;
     }
 
@@ -59,16 +62,14 @@ class FileListAdapter extends BaseAdapter {
         return convertView;
     }
 
-    public void setData(List<FileItem> lists) {
+    void setData(List<FileItem> lists) {
         this.lists = lists;
         notifyDataSetChanged();
     }
 
-    public List<FileItem> getLists() {
+    List<FileItem> getLists() {
         return lists;
     }
-
-    SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault());
 
     private class ViewHolder {
         private static final String TAG = "ViewHolder";
@@ -78,7 +79,7 @@ class FileListAdapter extends BaseAdapter {
         TextView time;
         CheckBox checkBox;
 
-        public ViewHolder(View view) {
+        ViewHolder(View view) {
             this.root = view;
             this.icon = view.findViewById(R.id.icon);
             this.name = view.findViewById(R.id.name);
@@ -86,14 +87,14 @@ class FileListAdapter extends BaseAdapter {
             this.checkBox = view.findViewById(R.id.checkbox);
         }
 
-        public void setData(FileItem item) {
+        void setData(FileItem item) {
             if (item.file.isDirectory()) {
                 icon.setImageResource(R.drawable.floder);
                 root.setOnClickListener(v -> {
                     if (item.position == 0) {
                         if (picker.stack.size() > 0) {
                             FileItem peek = picker.stack.pop();
-                            FileListAdapter.this.setData(new FileItem(peek.file.getParentFile(), picker.extensions).getFiles());
+                            FileListAdapter.this.setData(new FileItem(peek.file.getParentFile(), picker.extensions, picker.showHiddenFile).getFiles());
                             picker.listView.smoothScrollToPositionFromTop(peek.position, peek.getOffset(picker.context), 0);
                             SharedPreferences preference = picker.context.getSharedPreferences("file_picker", Context.MODE_PRIVATE);
                             preference.edit().putString("last_file", peek.file.getParentFile().getAbsolutePath()).apply();
@@ -119,18 +120,17 @@ class FileListAdapter extends BaseAdapter {
                     root.setOnClickListener(v -> checkBox.setChecked(!checkBox.isChecked()));
                 }
             }
-            Log.i(TAG, "setData: position : " + item.position);
             if (item.position == 0) {
                 name.setText("..");
                 time.setText("");
                 picker.subTitleView.setText(item.file.getPath());
+                Log.i(TAG, "setData: " + item.file.getPath());
+                picker.subTitleView.postDelayed(() -> picker.subTitleView.requestLayout(), 500);
             } else {
                 name.setText(item.file.getName());
                 time.setText(format.format(new Date(item.file.lastModified())));
             }
-            checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                item.isChecked = isChecked;
-            });
+            checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> item.isChecked = isChecked);
             checkBox.setChecked(item.isChecked);
             if (picker.pickType == FilePickerDialog.PICK_TYPE_ALL) {
                 checkBox.setVisibility(View.VISIBLE);

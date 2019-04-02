@@ -17,14 +17,14 @@ public class MainActivity extends AppCompatActivity {
             new FilePickerDialog(this)
                     .setExtensions(new String[]{".wav"})
                     .setPickMode(FilePickerDialog.PICK_MODE_SINGLE)
-                    .show(files -> Toast.makeText(this, "Sel:" + files, Toast.LENGTH_SHORT).show());
+                    .show(files -> Toast.makeText(this, "Select : " + files, Toast.LENGTH_SHORT).show());
         });
 
         findViewById(R.id.button2).setOnClickListener(v -> {
             new FilePickerDialog(this)
                     .setPickType(FilePickerDialog.PICK_TYPE_ALL)
                     .setPickMode(FilePickerDialog.PICK_MODE_MULTIPLE)
-                    .show(files -> Toast.makeText(this, "Sel:" + files, Toast.LENGTH_SHORT).show());
+                    .show(files -> Toast.makeText(this, "Select : " + files, Toast.LENGTH_SHORT).show());
         });
     }
 }
